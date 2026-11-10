@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>GiiKER Super Slide 3D — Tactile Electronic Sliding Puzzle</title>
+  <meta name="description" content="Experience GiiKER Super Slide in stunning 3D with 550+ verified levels, custom board sizes, custom piece forge, AI solver, hints, and tactile sliding physics!">
+  <link rel="stylesheet" href="./index.css?v=2.5">
+</head>
+<body>
+  <div id="app">
+    <!-- Top Modern Console Header -->
+    <header class="header-bar">
+      <div class="brand">
+        <div class="brand-icon">🎮</div>
+        <div class="brand-title">
+          GiiKER <span class="brand-badge">SUPER SLIDE 3D</span>
+        </div>
+      </div>
+
+      <!-- Level Selector & Mode Controls -->
+      <div class="header-center">
+        <div class="level-controls">
+          <button id="btn-prev-level" class="icon-btn-sm" title="Previous Level">◀</button>
+          <select id="level-select" class="level-select" aria-label="Select Level"></select>
+          <button id="btn-next-level" class="icon-btn-sm" title="Next Level">▶</button>
+          <span id="difficulty-badge" class="difficulty-badge starter">Starter</span>
+        </div>
+
+        <div class="mode-pills">
+          <button id="btn-open-levels" class="mode-btn" title="Open Level Browser (550+ Levels)">
+            <span>📂</span> Levels
+          </button>
+          <button id="btn-open-studio" class="mode-btn accent" title="Customize Board Size & Pieces">
+            <span>🎨</span> Custom Studio
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats HUD & Controls -->
+      <div class="header-right">
+        <!-- Timer with Quick Hide and Restart -->
+        <div id="stat-timer-container" class="stat-item timer-box" title="Elapsed Time">
+          <span class="stat-icon">⏱️</span>
+          <span id="stat-timer" class="stat-val">00:00</span>
+          <button id="btn-toggle-timer-vis" class="tiny-icon-btn" title="Toggle Timer Visibility (Key: T)">👁️</button>
+          <button id="btn-reset" class="tiny-icon-btn restart-btn" title="Restart Level & Reset Timer (Key: R)">⟳</button>
+        </div>
+
+        <!-- Moves -->
+        <div class="stat-item" title="Moves taken (Optimal minimum)">
+          <span class="stat-icon">🔄</span>
+          <span id="stat-moves" class="stat-val">0</span>
+          <span class="stat-sub">/ <span id="stat-optimal">—</span></span>
+        </div>
+
+        <!-- Audio, Monitor Toggle & Fullscreen -->
+        <button id="btn-header-monitor-toggle" class="icon-btn-round" title="Toggle Level Info Monitor (Key: I)">
+          <span>📊</span>
+        </button>
+        <button id="btn-toggle-sound" class="icon-btn-round" title="Toggle Sound">
+          <span>🔊</span>
+        </button>
+        <button id="btn-toggle-fullscreen" class="icon-btn-round" title="Toggle Fullscreen">
+          <span>⛶</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Floating Side Level Monitor (Retractable / Collapsible) -->
+    <aside id="side-level-monitor" class="side-level-monitor dock-right" aria-label="Level Monitor">
+      <!-- Retractable Toggle Button / Invisible Tab Handle -->
+      <button id="btn-toggle-monitor" class="monitor-toggle-tab" title="Toggle Level Info (Key: I)" aria-label="Toggle Level Info">
+        <span class="toggle-tab-icon">👁️</span>
+        <span class="toggle-tab-label">INFO</span>
+      </button>
+
+      <!-- Monitor Content Card -->
+      <div class="monitor-card-inner">
+        <div class="monitor-top-bar">
+          <div class="monitor-heading">
+            <span class="monitor-led-dot"></span>
+            <span class="monitor-heading-text">GiiKER MONITOR</span>
+          </div>
+          <div class="monitor-actions">
+            <button id="btn-goal-color-toggle" class="monitor-tiny-btn goal-color-btn" title="Cycle Goal Line Highlight (Duo / Green / Red, Key: G)">🎯</button>
+            <button id="btn-dock-switch" class="monitor-tiny-btn" title="Switch Dock Side (Left / Right)">⇄</button>
+            <button id="btn-hide-monitor" class="monitor-tiny-btn hide-btn" title="Hide Monitor Info (Key: I)">✕</button>
+          </div>
+        </div>
+
+        <div class="monitor-level-info">
+          <div class="monitor-level-name-wrap">
+            <span id="monitor-level-id" class="monitor-level-id">LEVEL 001</span>
+            <span id="monitor-level-diff" class="monitor-diff-tag starter">STARTER</span>
+          </div>
+          <div class="monitor-stats-strip">
+            <div class="monitor-stat-item">
+              <span class="m-stat-label">TARGET</span>
+              <span id="monitor-min-steps" class="m-stat-val">10</span>
+            </div>
+            <div class="monitor-stat-divider"></div>
+            <div class="monitor-stat-item">
+              <span class="m-stat-label">MOVES</span>
+              <span id="monitor-live-moves" class="m-stat-val">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mini Radar Dot-Matrix Layout Preview -->
+        <div class="monitor-radar-section">
+          <div class="radar-header">
+            <span class="radar-title">BOARD RADAR</span>
+            <button id="btn-goal-color-pill" class="goal-pill-btn mode-duo" title="Cycle Goal Line Highlight: Duo / Green / Red (Key: G)">
+              <span class="goal-pill-dot"></span>
+              <span id="goal-pill-label">GOAL: DUO</span>
+            </button>
+            <span id="monitor-status-badge" class="radar-status ready">READY</span>
+          </div>
+          <div class="radar-canvas-wrap">
+            <canvas id="monitor-radar-canvas" width="180" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 3D Canvas Viewport -->
+    <main id="canvas-container"></main>
+
+    <!-- Floating Interactive Toolbar -->
+    <nav class="toolbar-floating" aria-label="Game Controls">
+      <div class="tool-group">
+        <button id="btn-undo" class="tool-btn" title="Undo Move (Ctrl+Z)">
+          <span class="tool-icon">↩</span>
+          <span class="tool-label">Undo</span>
+        </button>
+        <button id="btn-redo" class="tool-btn" title="Redo Move (Ctrl+Y)">
+          <span class="tool-icon">↪</span>
+          <span class="tool-label">Redo</span>
+        </button>
+      </div>
+
+      <div class="tool-divider"></div>
+
+      <div class="tool-group">
+        <button id="btn-hint" class="tool-btn accent" title="Optimal 1-Step Hint (Key: H)">
+          <span class="tool-icon">💡</span>
+          <span class="tool-label">Hint</span>
+        </button>
+        <button id="btn-solve" class="tool-btn primary" title="Auto-Solve Puzzle Step-by-Step">
+          <span class="tool-icon">⚡</span>
+          <span class="tool-label">Auto Solve</span>
+        </button>
+      </div>
+
+      <div class="tool-divider"></div>
+
+      <div class="tool-group">
+        <button id="btn-cam-view" class="tool-btn" title="Switch 3D Camera Angle (Space)">
+          <span class="tool-icon">🎥</span>
+          <span class="tool-label">Camera</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Custom Studio Modal -->
+    <div id="custom-studio-modal" class="modal-overlay">
+      <div class="modal-card studio-card">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <span class="modal-badge-icon">🎨</span>
+            <h2 class="modal-title">GiiKER Custom Studio</h2>
+          </div>
+          <button id="btn-close-studio" class="modal-close-btn" title="Close Studio">×</button>
+        </div>
+
+        <div class="studio-layout">
+          <!-- Left Controls Sidebar -->
+          <div class="studio-sidebar">
+            <!-- Preset Selection -->
+            <div class="studio-section">
+              <label class="studio-label" for="studio-preset-select">📐 Board Template Presets</label>
+              <select id="studio-preset-select" class="studio-select"></select>
+            </div>
+
+            <!-- Board Dimension Customizer -->
+            <div class="studio-section">
+              <label class="studio-label">📏 Board Dimensions</label>
+              <div class="slider-row">
+                <span>Columns (Width): <b id="studio-cols-val">4</b></span>
+                <input id="studio-cols-input" type="range" min="3" max="8" value="4">
+              </div>
+              <div class="slider-row">
+                <span>Rows (Height): <b id="studio-rows-val">5</b></span>
+                <input id="studio-rows-input" type="range" min="3" max="8" value="5">
+              </div>
+            </div>
+
+            <!-- Exit Position -->
+            <div class="studio-section">
+              <div class="section-title-row">
+                <label class="studio-label">🎯 Goal Exit Target</label>
+                <span id="exit-coord-badge" class="coord-badge">Exit: (1, 3)</span>
+              </div>
+              <div class="exit-btn-grid">
+                <button class="studio-exit-btn active" data-exit="bottom-center">Bottom Center</button>
+                <button class="studio-exit-btn" data-exit="bottom-left">Bottom Left</button>
+                <button class="studio-exit-btn" data-exit="bottom-right">Bottom Right</button>
+                <button class="studio-exit-btn" data-exit="top-center">Top Center</button>
+                <button class="studio-exit-btn" data-exit="top-left">Top Left</button>
+                <button class="studio-exit-btn" data-exit="top-right">Top Right</button>
+                <button class="studio-exit-btn" data-exit="center">Center / Middle</button>
+                <button class="studio-exit-btn" data-exit="middle-left">Middle Left</button>
+                <button class="studio-exit-btn" data-exit="middle-right">Middle Right</button>
+              </div>
+              <button id="btn-set-exit-click" class="studio-action-pill" title="Click any cell on the grid to position the goal exit">
+                📍 Click Grid to Place Exit Target
+              </button>
+            </div>
+
+            <!-- Standard Palette -->
+            <div class="studio-section">
+              <label class="studio-label">🧩 Select Piece to Place</label>
+              <div class="palette-grid">
+                <button class="palette-piece-card active" data-type="goal">
+                  <div class="palette-preview goal-preview">★</div>
+                  <span>Goal (2×2)</span>
+                </button>
+                <button class="palette-piece-card" data-type="horizontal">
+                  <div class="palette-preview horiz-preview">═</div>
+                  <span>Horiz (2×1)</span>
+                </button>
+                <button class="palette-piece-card" data-type="vertical">
+                  <div class="palette-preview vert-preview">║</div>
+                  <span>Vert (1×2)</span>
+                </button>
+                <button class="palette-piece-card" data-type="single">
+                  <div class="palette-preview single-preview">●</div>
+                  <span>Single (1×1)</span>
+                </button>
+                <button class="palette-piece-card" data-type="obstacle">
+                  <div class="palette-preview obstacle-preview">✖</div>
+                  <span>Obstacle (1×1)</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Custom Polyomino Piece Forge -->
+            <div class="studio-section forge-section">
+              <div class="section-title-row">
+                <label class="studio-label">🔨 Shape Forge (L, M, T, Z & Custom)</label>
+                <span id="forge-cells-badge" class="coord-badge">3 Cells</span>
+              </div>
+
+              <!-- Quick Polyomino Presets -->
+              <div class="forge-presets-row">
+                <button class="forge-preset-pill" data-shape="L3" title="Small 3-cell L-Shape">◰ L-Shape (3)</button>
+                <button class="forge-preset-pill" data-shape="L4" title="Tall 4-cell L-Shape">◲ L-Shape (4)</button>
+                <button class="forge-preset-pill" data-shape="T" title="T-Shape Polyomino">⟙ T-Shape</button>
+                <button class="forge-preset-pill" data-shape="Z" title="Z / S-Shape">◫ Z-Shape</button>
+                <button class="forge-preset-pill" data-shape="Plus" title="Plus / Cross Shape">✚ Plus (+)</button>
+                <button class="forge-preset-pill" data-shape="U" title="U-Shape Polyomino">⊔ U-Shape</button>
+                <button class="forge-preset-pill" data-shape="M" title="M-Shape Polyomino">◪ M-Shape</button>
+                <button class="forge-preset-pill" data-shape="Square" title="2x2 Square">⬛ 2×2</button>
+                <button class="forge-preset-pill" data-shape="Clear" title="Clear Canvas to draw your own custom shape">⎚ Clear</button>
+              </div>
+
+              <!-- Interactive 4x4 Drawing Matrix -->
+              <div class="forge-canvas-wrap">
+                <span class="forge-tip">Click grid to draw any shape:</span>
+                <div id="forge-matrix-grid" class="forge-matrix-grid">
+                  <!-- 16 toggle cells generated by JS -->
+                </div>
+              </div>
+
+              <!-- Forge Color & Properties -->
+              <div class="forge-options-row">
+                <div class="forge-color-picker-wrap">
+                  <span>Color:</span>
+                  <input id="forge-color-input" type="color" value="#ffb703" title="Pick piece color">
+                  <div class="forge-swatches">
+                    <button class="swatch-dot" data-color="#ef233c" style="background:#ef233c" title="Ruby Red"></button>
+                    <button class="swatch-dot" data-color="#ffb703" style="background:#ffb703" title="Amber Gold"></button>
+                    <button class="swatch-dot" data-color="#06d6a0" style="background:#06d6a0" title="Emerald Green"></button>
+                    <button class="swatch-dot" data-color="#00b4d8" style="background:#00b4d8" title="Cobalt Blue"></button>
+                    <button class="swatch-dot" data-color="#8338ec" style="background:#8338ec" title="Royal Violet"></button>
+                    <button class="swatch-dot" data-color="#fb5607" style="background:#fb5607" title="Coral Orange"></button>
+                  </div>
+                </div>
+
+                <div class="forge-check-row">
+                  <label title="Designate this piece as the winning goal target">
+                    <input id="forge-is-goal" type="checkbox"> Is Goal
+                  </label>
+                  <label title="Make this piece an immovable barrier/obstacle">
+                    <input id="forge-is-obstacle" type="checkbox"> Obstacle
+                  </label>
+                </div>
+              </div>
+
+              <button id="btn-add-forge-piece" class="modal-btn secondary-sm">
+                <span>✨</span> Use Forged Shape
+              </button>
+            </div>
+          </div>
+
+          <!-- Center Interactive Grid Area -->
+          <div class="studio-center">
+            <div class="studio-grid-header">
+              <div class="studio-stats-bar">
+                <span>Cells: <b id="studio-stat-total">20</b></span>
+                <span>Filled: <b id="studio-stat-filled">18</b></span>
+                <span>Empty: <b id="studio-stat-empty">2</b></span>
+                <span>Goal: <b id="studio-stat-goal">✅ Active</b></span>
+              </div>
+              <button id="btn-studio-clear" class="tiny-action-btn">Clear All</button>
+            </div>
+
+            <!-- Interactive Grid Canvas -->
+            <div class="studio-grid-wrapper">
+              <div id="studio-grid-canvas" class="studio-grid-canvas"></div>
+            </div>
+
+            <!-- Solvability Status Box -->
+            <div id="studio-solvability-status" class="solvability-status info">
+              💡 Click on any empty cell above to place your selected piece. Click <b>Check Solvability</b> to verify if it can be solved!
+            </div>
+
+            <!-- Studio Action Bar -->
+            <div class="studio-actions-bar">
+              <button id="btn-studio-validate" class="modal-btn secondary">🔍 Check Solvability</button>
+              <button id="btn-studio-play" class="modal-btn primary">⚡ Test & Play Board</button>
+              <button id="btn-studio-save" class="modal-btn success">💾 Save Level</button>
+              <button id="btn-studio-export" class="modal-btn outline">📋 Export JSON</button>
+              <button id="btn-studio-import" class="modal-btn outline">📥 Import JSON</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Level Browser Modal (550+ Levels) -->
+    <div id="level-browser-modal" class="modal-overlay">
+      <div class="modal-card browser-card">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <span class="modal-badge-icon">📂</span>
+            <h2 class="modal-title">GiiKER Level Library (550+ Challenges)</h2>
+          </div>
+          <button class="modal-close-btn" onclick="document.getElementById('level-browser-modal').classList.remove('active')">×</button>
+        </div>
+
+        <!-- Pack Category Tabs -->
+        <div id="level-browser-tabs" class="browser-tabs"></div>
+
+        <!-- Levels Grid -->
+        <div id="level-browser-grid" class="browser-grid"></div>
+      </div>
+    </div>
+
+    <!-- Victory Celebration Modal -->
+    <div id="victory-modal" class="modal-overlay">
+      <div class="modal-card victory-card">
+        <div class="victory-icon-wrap">
+          <span class="victory-icon">🏆</span>
+        </div>
+        <h2 id="victory-title" class="victory-title">Level Cleared!</h2>
+        <div id="victory-stars" class="victory-stars">★★★</div>
+
+        <div class="victory-stats-grid">
+          <div class="v-stat-card">
+            <span class="v-stat-label">Time</span>
+            <span id="victory-stat-time" class="v-stat-val">00:45</span>
+          </div>
+          <div class="v-stat-card">
+            <span class="v-stat-label">Your Moves</span>
+            <span id="victory-stat-moves" class="v-stat-val">28</span>
+          </div>
+          <div class="v-stat-card">
+            <span class="v-stat-label">Optimal</span>
+            <span id="victory-stat-optimal" class="v-stat-val">24</span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button id="btn-victory-replay" class="modal-btn secondary">⟳ Replay</button>
+          <button id="btn-victory-next" class="modal-btn primary">Next Level ▶</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Local Offline Scripts -->
+  <script src="./three.min.js"></script>
+  <script src="./OrbitControls.js"></script>
+  <script src="./confetti.browser.min.js"></script>
+  <script src="./src/audio.js?v=2.5"></script>
+  <script src="./src/levels_data.js?v=2.5"></script>
+  <script src="./src/solver.js?v=2.5"></script>
+  <script src="./src/custom_studio.js?v=2.5"></script>
+  <script src="./src/game.js?v=2.5"></script>
+</body>
+</html>
+
